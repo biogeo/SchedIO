@@ -1,0 +1,6 @@
+An Arduino sketch and Matlab/Psychtoolbox code for using an Arduino as a simple digital I/O device, for which the Arduino can control the timing of I/O events, letting the computer running Matlab/Psychtoolbox "fire-and-forget" these events. E.g., the computer can send a few-bytes command over the serial port to tell the Arduino "Set pin 7 high, then in 200 milliseconds, set it low again." Useful for situations where precise timing of pulses is important (e.g., controlling a device like a solenoid), but the computer running Matlab/Psychtoolbox has other things to be doing (e.g., showing stimuli).
+
+This code is released under the MIT license (do whatever you like with it, but don't blame me if it doesn't work); see the LICENSE file for the full text.
+
+Have fun!
+Geoffrey Adams, 2013
