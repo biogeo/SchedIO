@@ -1,4 +1,33 @@
-// Digital output schedule server
+// SchedIO.pde
+// A sketch for running an Arduino as a scheduled digital output device for
+// for millisecond-level precision intervals.
+// See the README file for usage notes, the comments here discuss
+// implementation.
+// Note that at the moment, the name "SchedIO" is a bit misleading, as there is
+// only output implemented, not input. That may change some day.
+// 
+// The basic idea is to allow a PC to communicate with the Arduino, sending
+// short commands which schedule changes to the voltage levels on the Arduino's
+// digital I/O pins. Commands are about four bytes, which at 115200 baud takes
+// about .3 ms to send, plus whatever latency is associated with writing to the
+// serial port. Therefore there may be some imprecision in the latency to the
+// command, but intervals between commands should be precise; in particular, the
+// "pulse pin" commands should give nice reliable square pulses of the desired
+// width.
+// 
+// The sketch works by establishing a "priority queue" data structure for
+// commands. This is implemented pretty brainlessly as a sorted list. Commands
+// to set a pin high or low are inserted into the list according to their
+// scheduled time. At each iteration of the loop(), all commands at the front of
+// the queue which are due (scheduled time <= current time) are popped from the
+// queue and executed. In general, it's not expected that the queue will ever
+// grow very long, so using a sorted list instead of something more
+// sophisticated like a heap is probably fine.
+// 
+// A command sequence consists of two or four bytes. The first byte is the
+// command type, the second identifies the output pin being controlled, and the
+// remaining bytes (if any) are timing parameters.
+// 
 // Commands:
 //    1 <pin>: Set pin high
 //    2 <pin>: Set pin low

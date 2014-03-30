@@ -140,7 +140,7 @@ classdef SchedIO < handle
                 if counts(index) == 0
                     % We are opening a new port
                     port_ptrs(index) = IOPort('OpenSerialPort', ...
-                        port, 'BaudRate=115200');
+                        port, 'BaudRate=115200 Lenient');
                 end
                 counts(index) = counts(index) + 1;
                 port_ptr = port_ptrs(index);
