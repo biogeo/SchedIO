@@ -39,7 +39,7 @@
 const unsigned long baudRate = 115200;
 // Use numDigPins = 14 for e.g., Duemilanova
 // Use numDigPins = 54 for Mega 2560
-const byte numDigPins = 54;
+const byte numDigPins = 14;
 
 // Define command bytes:
 const byte
