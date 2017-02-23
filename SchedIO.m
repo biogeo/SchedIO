@@ -7,7 +7,7 @@ classdef SchedIO < handle
 % the computer running Matlab. This allows a very short command to cause
 % the Arduino to produce, for example, a 50 ms digital pulse, letting the
 % computer "fire-and-forget."
-% 
+%
 % This class is designed for use with Psychtoolbox, specifically its IOPort
 % function.
     properties (SetAccess=private)
@@ -15,14 +15,14 @@ classdef SchedIO < handle
         port_ptr
     end
     properties (Constant)
-        cmdByteSetHigh   = 1;
-        cmdByteSetLow    = 2;
-        cmdBytePulseHigh = 3;
-        cmdBytePulseLow  = 4;
-        cmdByteDelayHigh = 5;
-        cmdByteDelayLow  = 6;
+        cmdByteSetOn    = 1;
+        cmdByteSetOff   = 2;
+        cmdBytePulseOn  = 3;
+        cmdBytePulseOff = 4;
+        cmdByteDelayOn  = 5;
+        cmdByteDelayOff = 6;
     end
-    
+
     methods
         function obj = SchedIO(port_name)
 % SchedIO  Get a handle to a SchedIO object
@@ -38,48 +38,48 @@ classdef SchedIO < handle
             obj.port_name = port_name;
             obj.port_ptr = SchedIO.reference_counter(port_name, true);
         end
-        
+
         function delete(obj)
             SchedIO.reference_counter(obj.port_name, false);
         end
-        
+
         function when = SetPin(obj, pin, value)
             % Usage:
             %     when = obj.SetPin(pin, value)
             % Send a command to the digital output server to set a specific
-            % pin either high or low immediately. "value" should be 1 or 0,
-            % or true or false, to indicate high or low, respectively.
+            % pin either on or off immediately. "value" should be 1 or 0,
+            % or true or false, to indicate on or off, respectively.
             % "when" is the time at which the command was sent.
             cmd_bytes = [2-value pin];
             [n, when] = IOPort('Write', obj.port_ptr, uint8(cmd_bytes));
         end
-        
+
         function when = PulsePin(obj, pin, value, time_ms)
             % Usage:
             %     when = obj.PulsePin(pin, value, time_ms)
             % Send a command to the digital output server to set a specific
-            % pin either high or low for some duration, then set the pin to
+            % pin either on or off for some duration, then set the pin to
             % the opposite value.  "value" should be 1 or 0, or true or
-            % false, to indicate a high or low pulse, respectively.
+            % false, to indicate a on or off pulse, respectively.
             % "time_ms" is the duration of the pulse, in milliseconds (max
             % 65535). "when" is the time at which the command was sent.
             cmd_bytes = [4-value pin floor(time_ms/255) mod(time_ms,255)];
             [n, when] = IOPort('Write', obj.port_ptr, uint8(cmd_bytes));
         end
-        
+
         function when = DelaySetPin(obj, pin, value, time_ms)
             % Usage:
             %     when = obj.DelaySetPin(pin, value, time_ms)
             % Send a command to the digital output server to set a specific
-            % pin high or low after a delay. "value" should be 1 or 0, or
-            % true or false, to indicate a high or low pulse, respectively.
+            % pin on or off after a delay. "value" should be 1 or 0, or
+            % true or false, to indicate a on or off pulse, respectively.
             % "time_ms" is the duration of the delay before setting the
             % pin, in milliseconds (max 65535). "when" is the time at which
             % the command was sent.
             cmd_bytes = [6-value pin floor(time_ms/255) mod(time_ms,255)];
             [n, when] = IOPort('Write', obj.port_ptr, uint8(cmd_bytes));
         end
-        
+
         function when = SendBytes(obj, bytes)
             % Usage:
             %     when = h.SendBytes(bytes)
@@ -91,23 +91,23 @@ classdef SchedIO < handle
             % serial write operation, slightly improving performance. Best
             % used in conjunction with GetCommandBytes, as in the following
             % example:
-            % >> bytes = h.GetCommandBytes('SetHigh', 3);
-            % >> bytes = [bytes, h.GetCommandBytes('DelayLow', 4, 1000)];
-            % >> bytes = [bytes, h.GetCommandBytes('PulseHigh', 5, 500)];
+            % >> bytes = h.GetCommandBytes('SetOn', 3);
+            % >> bytes = [bytes, h.GetCommandBytes('DelayOff', 4, 1000)];
+            % >> bytes = [bytes, h.GetCommandBytes('PulseOn', 5, 500)];
             % >> h.SendBytes(bytes)
-            % This example would set pin 3 high immediately, set pin 4 high
-            % in 1000 ms, and pulse pin 5 high for 500 ms, all starting at
+            % This example would set pin 3 on immediately, set pin 4 on
+            % in 1000 ms, and pulse pin 5 on for 500 ms, all starting at
             % the same time (with some slight delay associated with the
             % Arduino processing each command).
             [n, when] = IOPort('Write', obj.port_ptr, bytes);
         end
     end
-    
+
     methods (Static)
         function bytes = GetCommandBytes(command, pin, time_ms)
             [iscmd, cmd_num] = ismember(lower(command), ...
-                {'sethigh', 'setlow', 'pulsehigh', 'pulselow', ...
-                'delayhigh', 'delaylow'});
+                {'seton', 'setoff', 'pulseon', 'pulseoff', ...
+                'delayon', 'delayoff'});
             if ~iscmd
                 error('SchedIO:badCommand', 'Invalid command string.');
             end
@@ -119,7 +119,7 @@ classdef SchedIO < handle
             end
         end
     end
-    
+
     methods (Static, Access=private)
         function port_ptr = reference_counter(port, is_increment)
             persistent ports

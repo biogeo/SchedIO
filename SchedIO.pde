@@ -5,7 +5,7 @@
 // implementation.
 // Note that at the moment, the name "SchedIO" is a bit misleading, as there is
 // only output implemented, not input. That may change some day.
-// 
+//
 // The basic idea is to allow a PC to communicate with the Arduino, sending
 // short commands which schedule changes to the voltage levels on the Arduino's
 // digital I/O pins. Commands are about four bytes, which at 115200 baud takes
@@ -14,7 +14,7 @@
 // command, but intervals between commands should be precise; in particular, the
 // "pulse pin" commands should give nice reliable square pulses of the desired
 // width.
-// 
+//
 // The sketch works by establishing a "priority queue" data structure for
 // commands. This is implemented pretty brainlessly as a sorted list. Commands
 // to set a pin high or low are inserted into the list according to their
@@ -23,11 +23,11 @@
 // queue and executed. In general, it's not expected that the queue will ever
 // grow very long, so using a sorted list instead of something more
 // sophisticated like a heap is probably fine.
-// 
+//
 // A command sequence consists of two or four bytes. The first byte is the
 // command type, the second identifies the output pin being controlled, and the
 // remaining bytes (if any) are timing parameters.
-// 
+//
 // Commands:
 //    1 <pin>: Set pin high
 //    2 <pin>: Set pin low
@@ -36,21 +36,37 @@
 //    5 <pin> <dur1> <dur2>: In word(dur1,dur2) ms, set pin high
 //    6 <pin> <dur1> <dur2>: In word(dur1,dur2) ms, set pin low
 
-const unsigned long baudRate = 115200;
-// Use numDigPins = 14 for e.g., Duemilanova
-// Use numDigPins = 54 for Mega 2560
-const byte numDigPins = 14;
+// Use NUM_DIGITAL_PINS = 14 for e.g., Duemilanova
+// Use NUM_DIGITAL_PINS = 54 for Mega 2560
+const byte NUM_DIGITAL_PINS = 14;
+
+// Uncomment the following line to cause the on/off to high/low mapping to be
+// inverted.
+//#define INVERT_SIGNALS
+
+const unsigned long BAUD_RATE = 115200;
+
+#ifdef INVERT_SIGNALS
+const byte SIGNAL_ON = LOW;
+const byte SIGNAL_OFF = HIGH;
+#else
+const byte SIGNAL_ON = HIGH;
+const byte SIGNAL_OFF = LOW;
+#endif
+
+// Initial value of the digital I/O pins
+const byte DEFAULT_OUTPUT = SIGNAL_OFF;
 
 // Define command bytes:
 const byte
-  CMD_NONE       = 0,
-  CMD_SET_HIGH   = 1,
-  CMD_SET_LOW    = 2,
-  CMD_PULSE_HIGH = 3,
-  CMD_PULSE_LOW  = 4,
-  CMD_DELAY_HIGH = 5,
-  CMD_DELAY_LOW  = 6;
-const byte LAST_COMMAND = CMD_DELAY_LOW;
+  CMD_NONE      = 0,
+  CMD_SET_ON    = 1,
+  CMD_SET_OFF   = 2,
+  CMD_PULSE_ON  = 3,
+  CMD_PULSE_OFF = 4,
+  CMD_DELAY_ON  = 5,
+  CMD_DELAY_OFF = 6;
+const byte LAST_COMMAND = CMD_DELAY_OFF;
 const byte
   SCHED_NONE      = 0,
   SCHED_IMMEDIATE = 1,
@@ -106,16 +122,16 @@ void RunCommands() {
 }
 
 inline boolean IsPinValid(byte pin) {
-  return (pin >=2 && pin < numDigPins);
+  return (pin >=2 && pin < NUM_DIGITAL_PINS);
 }
 
 void setup() {
   unsigned int i;
-  for (i=2; i<numDigPins; i++) {
+  for (i=2; i<NUM_DIGITAL_PINS; i++) {
     pinMode(i,OUTPUT);
-    digitalWrite(i,LOW);
+    digitalWrite(i,DEFAULT_OUTPUT);
   }
-  Serial.begin(baudRate);
+  Serial.begin(BAUD_RATE);
   commandQueueRoot = (CommandQueueNode*)NULL;
 }
 
@@ -123,7 +139,7 @@ void loop() {
   static byte currentReadBytes = 0;
   static byte currentCommand   = CMD_NONE;
   static byte currentSchedule  = SCHED_NONE;
-  static boolean currentValue  = LOW;
+  static boolean currentValue  = DEFAULT_OUTPUT;
   static byte currentPin       = 0;
   static byte currentParams[2];
   byte serialInput;
@@ -139,28 +155,28 @@ void loop() {
       if (serialInput >=1 && serialInput <= LAST_COMMAND) {
         currentCommand = serialInput;
         switch (currentCommand) {
-          case CMD_SET_HIGH:
-          case CMD_PULSE_HIGH:
-          case CMD_DELAY_HIGH:
-            currentValue = HIGH;
+          case CMD_SET_ON:
+          case CMD_PULSE_ON:
+          case CMD_DELAY_ON:
+            currentValue = SIGNAL_ON;
             break;
-          case CMD_SET_LOW:
-          case CMD_PULSE_LOW:
-          case CMD_DELAY_LOW:
-            currentValue = LOW;
+          case CMD_SET_OFF:
+          case CMD_PULSE_OFF:
+          case CMD_DELAY_OFF:
+            currentValue = SIGNAL_OFF;
             break;
         }
         switch (currentCommand) {
-          case CMD_SET_HIGH:
-          case CMD_SET_LOW:
+          case CMD_SET_ON:
+          case CMD_SET_OFF:
             currentSchedule = SCHED_IMMEDIATE;
             break;
-          case CMD_PULSE_HIGH:
-          case CMD_PULSE_LOW:
+          case CMD_PULSE_ON:
+          case CMD_PULSE_OFF:
             currentSchedule = SCHED_PULSE;
             break;
-          case CMD_DELAY_HIGH:
-          case CMD_DELAY_LOW:
+          case CMD_DELAY_ON:
+          case CMD_DELAY_OFF:
             currentSchedule = SCHED_DELAY;
             break;
         }
@@ -193,4 +209,3 @@ void loop() {
     }
   }
 }
-
