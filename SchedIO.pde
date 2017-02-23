@@ -36,10 +36,6 @@
 //    5 <pin> <dur1> <dur2>: In word(dur1,dur2) ms, set pin high
 //    6 <pin> <dur1> <dur2>: In word(dur1,dur2) ms, set pin low
 
-// Use NUM_DIGITAL_PINS = 14 for e.g., Duemilanova
-// Use NUM_DIGITAL_PINS = 54 for Mega 2560
-const byte NUM_DIGITAL_PINS = 14;
-
 // Uncomment the following line to cause the on/off to high/low mapping to be
 // inverted.
 //#define INVERT_SIGNALS
